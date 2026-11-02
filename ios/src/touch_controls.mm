@@ -18,8 +18,8 @@
 #include "touch_controls.h"
 
 REXCVAR_DEFINE_BOOL(ios_touch_haptics, true, "Input", "Crisp CoreHaptics tactile pulses on fighting strikes");
-REXCVAR_DEFINE_FLOAT(ios_touch_opacity, 0.85f, "Input", "Touch controls opacity (0.2 to 1.0)");
-REXCVAR_DEFINE_FLOAT(ios_touch_scale, 1.0f, "Input", "Scale multiplier for arcade fighting buttons");
+REXCVAR_DEFINE_DOUBLE(ios_touch_opacity, 0.85, "Input", "Touch controls opacity (0.2 to 1.0)");
+REXCVAR_DEFINE_DOUBLE(ios_touch_scale, 1.0, "Input", "Scale multiplier for arcade fighting buttons");
 REXCVAR_DEFINE_INT32(ios_touch_dpad_mode, 0, "Input", "0 = 8-way Fixed D-Pad, 1 = Floating D-Pad, 2 = Analog Stick");
 
 namespace {
