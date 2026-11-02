@@ -1,0 +1,40 @@
+# Tekken 6 ReXGlue project manifest for iOS & Desktop
+# Supports Title ID 4E4D07FC (World / Multi-language release: En,Ja,Fr,De,Es,It,Ko,Ru)
+
+[project]
+name = "tekken6"
+sdk_version = "1.0.0"
+game_root = "."
+
+[entrypoint]
+file_path = "xex/tekken6_default.xex"
+out_directory_path = "generated/default"
+includes = [
+  "tekken6_config.toml",
+]
+
+[entrypoint.functions]
+0x82170000 = {}
+0x821927D0 = {}
+0x82192830 = {}
+0x82192890 = {}
+0x821928F0 = {}
+0x82218290 = {}
+0x82221CD8 = {}
+0x8231D350 = {}
+0x82404B58 = {}
+0x82404BE8 = {}
+0x82494440 = {}
+0x82494448 = {}
+0x824BE868 = {}
+0x824BEA50 = {}
+0x82513308 = {}
+0x82513BC0 = {}
+0x82513BE0 = {}
+0x82513E48 = {}
+0x82514E28 = {}
+0x825231D8 = {}
+0x8252B5C8 = {}
+0x825359E0 = {}
+0x8267D800 = {}
+0x8268F528 = {}

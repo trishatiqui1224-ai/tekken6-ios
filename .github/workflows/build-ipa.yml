@@ -1,0 +1,175 @@
+name: Build Tekken 6 iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      xex_url:
+        description: 'Direct download URL for Tekken 6 retail default.xex'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-ios:
+    name: Build Tekken 6 iOS (ARM64)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Select Xcode 16 for C++23 Support
+        run: |
+          XCODE_16=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "${XCODE_16}" ]; then
+            echo "[CI] Selecting Xcode 16 at ${XCODE_16}..."
+            sudo xcode-select -s "${XCODE_16}"
+          else
+            echo "[CI] Xcode 16 not found by glob, checking available Xcode apps:"
+            ls -d /Applications/Xcode*.app || true
+          fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --find clang
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install System Dependencies (Ninja & CMake)
+        run: |
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install ninja cmake
+          python3 -m pip install --upgrade pip pillow
+
+      - name: Cache ReXGlue iOS SDK & MoltenVK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: |
+            rexglue-sdk-ios
+            ../rexglue-sdk-ios
+            ~/.tekken6-ios
+          key: ${{ runner.os }}-rexglue-sdk-v0.10.0-mvk-1.4.1
+
+      - name: Restore or Unpack Game Codegen
+        run: |
+          mkdir -p game generated/default xex
+          if [ -f "gen.tar.gz" ]; then
+            echo "[CI] Unpacking pre-verified generated C++ code from gen.tar.gz..."
+            tar -xzf gen.tar.gz
+          fi
+
+          if [ -n "${{ inputs.xex_url }}" ]; then
+            echo "[CI] Downloading default.xex from provided xex_url..."
+            curl -L -s -o xex/tekken6_default.xex "${{ inputs.xex_url }}"
+          fi
+
+      - name: Generate Studio-Grade AppIcon
+        run: |
+          python3 tools/generate_appicon.py --style fist
+
+      - name: Prepare ReXGlue SDK & MoltenVK for iOS
+        run: |
+          python3 tools/ios/prepare_sdk.py --sdk "../rexglue-sdk-ios" || python3 tools/ios/prepare_sdk.py
+
+      - name: Hard CI Assertion (Zero Unresolved Branches)
+        run: |
+          echo "[CI] Scanning generated C++ files for unresolved branch warnings..."
+          UNRESOLVED=$(grep -r "Unresolved branch from" generated/default/ 2>/dev/null | wc -l | tr -d ' ')
+          echo "[CI] Unresolved branch count: $UNRESOLVED"
+          if [ "$UNRESOLVED" -ne "0" ]; then
+            echo "[FATAL CI ASSERTION FAILURE] $UNRESOLVED unresolved branch occurrences found!"
+            exit 1
+          fi
+          echo "[OK] Clean static recompilation verified: 0 unresolved branches!"
+
+      - name: Configure CMake for iOS (ARM64 Native)
+        run: |
+          cd ios
+          export CC="$(xcrun --sdk iphoneos --find clang)"
+          export CXX="$(xcrun --sdk iphoneos --find clang++)"
+          export OBJC="${CC}"
+          export OBJCXX="${CXX}"
+          cmake --preset ios \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DREX_PLATFORM_IOS=1 \
+            -DCMAKE_C_COMPILER="${CC}" \
+            -DCMAKE_CXX_COMPILER="${CXX}" \
+            -DCMAKE_OBJC_COMPILER="${CC}" \
+            -DCMAKE_OBJCXX_COMPILER="${CXX}" \
+            -DCMAKE_ASM_COMPILER="${CC}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTEKKEN6_WITH_GAME=1 \
+            -DTITLE_ID="4E4D07FC" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
+
+      - name: Compile and Package Unsigned IPA
+        run: |
+          cd ios
+          cmake --build --preset ios --target ipa -- -j 4 || {
+            echo "[CI] Build failed with -j 4; retrying with single job diagnostics..."
+            cmake --build --preset ios --target ipa -v -- -j 1
+            exit 1
+          }
+
+      - name: Compute Checksums & Verify Artifacts
+        run: |
+          mkdir -p dist
+          IPA_SRC="ios/build-ios/Tekken6-iOS-unsigned.ipa"
+          if [ ! -f "${IPA_SRC}" ]; then
+            IPA_SRC="ios/build/Tekken6-iOS-unsigned.ipa"
+          fi
+          if [ ! -f "${IPA_SRC}" ]; then
+            IPA_SRC=$(ls ios/build*/*.ipa | head -n 1)
+          fi
+
+          echo "[CI] Using IPA artifact: ${IPA_SRC}"
+          cp -f "${IPA_SRC}" dist/Tekken6-iOS-unsigned.ipa
+          cp -f "${IPA_SRC}" dist/Tekken6.ipa
+          cp -f tools/icon_preview_sheet.png dist/icon_preview_sheet.png || true
+          cd dist
+          shasum -a 256 Tekken6-iOS-unsigned.ipa > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload Unsigned IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tekken6-iOS-unsigned-IPA
+          path: |
+            dist/Tekken6-iOS-unsigned.ipa
+            dist/Tekken6.ipa
+            dist/SHA256SUMS.txt
+            dist/icon_preview_sheet.png
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.0' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'Tekken 6 iOS v1.0.0 Release' }}
+          files: |
+            dist/Tekken6-iOS-unsigned.ipa
+            dist/Tekken6.ipa
+            dist/SHA256SUMS.txt
+            dist/icon_preview_sheet.png
+          draft: false
+          prerelease: false
+          generate_release_notes: true

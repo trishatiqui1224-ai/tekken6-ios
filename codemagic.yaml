@@ -1,0 +1,37 @@
+# Codemagic CI/CD Workflow for Tekken 6 Recompiled iOS
+workflows:
+  ios-release:
+    name: Build Tekken 6 iOS (Unsigned IPA)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      python: 3.11
+    scripts:
+      - name: Install build tools
+        script: |
+          brew install ninja cmake
+          python3 -m pip install --upgrade pip pillow
+      - name: Generate AppIcon
+        script: |
+          python3 tools/generate_appicon.py --style fist
+      - name: Prepare ReXGlue SDK
+        script: |
+          python3 tools/ios/prepare_sdk.py
+      - name: Build & Package IPA
+        script: |
+          cmake --preset ios \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DREX_PLATFORM_IOS=1 \
+            -DTEKKEN6_WITH_GAME=1 \
+            -DTITLE_ID="4E4D07FC"
+          cmake --build --preset ios --target ipa
+    artifacts:
+      - ios/build-ios/Tekken6-iOS-unsigned.ipa
+      - ios/build-ios/Tekken6.ipa
+      - tools/icon_preview_sheet.png
+

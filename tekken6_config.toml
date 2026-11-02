@@ -1,0 +1,20 @@
+# Code generation configuration for the retail Tekken 6 Xbox 360 XEX.
+# Supports Title ID 4E4D07FC (World / Multi-language release: En,Ja,Fr,De,Es,It,Ko,Ru)
+
+indirect_calls = [
+    0x82390788,
+]
+
+[rexcrt]
+memcpy = 0x826A1130
+memset = 0x826A03B0
+
+skip_lr = false
+skip_msr = false
+ctr_as_local = false
+xer_as_local = false
+reserved_as_local = false
+cr_as_local = false
+non_argument_as_local = false
+non_volatile_as_local = false
+

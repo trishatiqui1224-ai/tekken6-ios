@@ -1,0 +1,58 @@
+# Build and Derived Data
+build/
+build-*/
+DerivedData/
+.build/
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+*.xcworkspace/
+*.ipa
+Payload/
+*.dSYM/
+*.o
+*.obj
+*.a
+*.dylib
+*.framework
+
+# Game assets & binaries
+game/
+*.iso
+*.ISO
+*.BIN
+*.IDX
+*.xex
+*.XEX
+!xex/tekken6_default.xex
+*.rar
+*.zip
+*.7z
+*.tar.gz
+!gen.tar.gz
+Documents/
+
+# Local configuration & logs
+*.log
+*.txt.bak
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+__pycache__/
+*.pyc
+
+# ReXGlue SDK build artifacts
+rexglue-sdk-ios/
+.tekken6-ios/
+sdk/
+
+# Generated code (committed via gen.tar.gz for fast cloning)
+ios/generated/
+generated/default/*.cpp
+generated/default/*.h
+generated/default/*.json
+generated/default/*.stamp
+generated/default/*.d
+!generated/default/sources.cmake

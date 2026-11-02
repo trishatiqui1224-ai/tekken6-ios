@@ -1,0 +1,35 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ios",
+      "displayName": "iOS ARM64 (Release)",
+      "description": "Cross-compile Tekken 6 for iPhone and iPad (iOS 16.0+)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-ios",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_SYSROOT": "iphoneos",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "16.0",
+        "REX_PLATFORM_IOS": "1",
+        "TEKKEN6_WITH_GAME": "1",
+        "TITLE_ID": "4E4D07FC"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ios",
+      "configurePreset": "ios"
+    }
+  ]
+}
+
