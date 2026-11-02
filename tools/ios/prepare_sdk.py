@@ -4,7 +4,7 @@ tools/ios/prepare_sdk.py
 Prepares and patches the ReXGlue SDK tree for Tekken 6 iOS cross-compilation.
 
 Responsibilities:
-  1. Clones or verifies rexglue-sdk-ios at the target location.
+  1. Clones or verifies rexglue-sdk-ios (v0.10.0) at the target location.
   2. Downloads MoltenVK v1.4.1 XCFramework for iOS ARM64.
   3. Patches SDK with dry-run assertions:
      - Disables desktop loader & submodule MoltenVK on iOS.
@@ -30,11 +30,49 @@ REPO_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from patch_engine import find_sdk, run_patch
 
+SDK_REPO = "https://github.com/rexglue/rexglue-sdk.git"
+SDK_TAG = "v0.10.0"
+
 MOLTENVK_VERSION = "v1.4.1"
 MOLTENVK_URL = (
     f"https://github.com/KhronosGroup/MoltenVK/releases/download/"
     f"{MOLTENVK_VERSION}/MoltenVK-ios.tar"
 )
+
+
+def ensure_sdk_cloned(sdk_dir: pathlib.Path):
+    """Clones the base ReXGlue SDK repository if not already present."""
+    if (sdk_dir / "CMakeLists.txt").exists():
+        print(f"[prepare_sdk] SDK already present at {sdk_dir}")
+    else:
+        sdk_dir.parent.mkdir(parents=True, exist_ok=True)
+        print(f"[prepare_sdk] Cloning ReXGlue SDK ({SDK_TAG}) from {SDK_REPO} -> {sdk_dir}...")
+        subprocess.run(["git", "clone", "--branch", SDK_TAG, "--depth", "1", SDK_REPO, str(sdk_dir)], check=True)
+
+    # Ensure git tags are fetched and reachable so rex_compute_version resolves cleanly
+    subprocess.run(["git", "fetch", "--tags", "--depth=1"], cwd=str(sdk_dir), check=False, capture_output=True)
+    chk = subprocess.run(["git", "describe", "--tags", "--match", "v*"], cwd=str(sdk_dir), check=False, capture_output=True)
+    if chk.returncode != 0:
+        subprocess.run(["git", "tag", "-f", SDK_TAG, "HEAD"], cwd=str(sdk_dir), check=False, capture_output=True)
+        print(f"[prepare_sdk] Tagged {SDK_TAG} on HEAD")
+
+    print(f"[prepare_sdk] Updating git submodules for {sdk_dir}...")
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "core.symlinks=false",
+            "submodule",
+            "update",
+            "--init",
+            "--recursive",
+            "--depth",
+            "1",
+        ],
+        cwd=str(sdk_dir),
+        check=False,
+    )
+    print("[prepare_sdk] Submodules updated.")
 
 
 def ensure_moltenvk(sdk_dir: pathlib.Path):
@@ -205,12 +243,14 @@ def apply_pipeline_cache_patch(sdk: pathlib.Path):
 
 def main():
     parser = argparse.ArgumentParser(description="ReXGlue iOS SDK Preparation")
-    parser.add_argument("--sdk", type=str, help="Path to rexglue-sdk-ios")
+    parser.add_argument("--sdk", type=str, default=str(REPO_ROOT.parent / "rexglue-sdk-ios"),
+                        help="Path to rexglue-sdk-ios (default: ../rexglue-sdk-ios)")
     args = parser.parse_args()
 
-    sdk_dir = find_sdk("CMakeLists.txt", pathlib.Path(args.sdk) if args.sdk else None)
+    sdk_dir = pathlib.Path(args.sdk).resolve()
     print(f"[prepare_sdk] Targeting ReXGlue SDK at: {sdk_dir}")
 
+    ensure_sdk_cloned(sdk_dir)
     ensure_moltenvk(sdk_dir)
     apply_cmake_patches(sdk_dir)
     apply_fpscr_patch(sdk_dir)
@@ -222,4 +262,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
