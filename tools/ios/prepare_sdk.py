@@ -60,8 +60,6 @@ def ensure_sdk_cloned(sdk_dir: pathlib.Path):
     subprocess.run(
         [
             "git",
-            "-c",
-            "core.symlinks=false",
             "submodule",
             "update",
             "--init",
@@ -73,6 +71,26 @@ def ensure_sdk_cloned(sdk_dir: pathlib.Path):
         check=False,
     )
     print("[prepare_sdk] Submodules updated.")
+    fix_libmspack_symlinks(sdk_dir)
+
+
+def fix_libmspack_symlinks(sdk_dir: pathlib.Path):
+    """Resolves any symlink text files in libmspack/cabextract/mspack on platforms where symlinks were checked out as text."""
+    cab_dir = sdk_dir / "thirdparty" / "libmspack" / "cabextract" / "mspack"
+    if not cab_dir.exists():
+        return
+    for item in list(cab_dir.iterdir()):
+        if item.is_file() and not item.is_symlink():
+            try:
+                content = item.read_text(encoding="utf-8").strip()
+                if content.startswith("../../") and len(content) < 256:
+                    target = (item.parent / content).resolve()
+                    if target.exists() and target.is_file():
+                        item.unlink()
+                        item.write_bytes(target.read_bytes())
+                        print(f"  [ok] Replaced symlink text with target content for {item.name}")
+            except Exception as e:
+                print(f"  [warning] Failed to fix symlink for {item.name}: {e}")
 
 
 def ensure_moltenvk(sdk_dir: pathlib.Path):
@@ -251,6 +269,7 @@ def main():
     print(f"[prepare_sdk] Targeting ReXGlue SDK at: {sdk_dir}")
 
     ensure_sdk_cloned(sdk_dir)
+    fix_libmspack_symlinks(sdk_dir)
     ensure_moltenvk(sdk_dir)
     apply_cmake_patches(sdk_dir)
     apply_fpscr_patch(sdk_dir)
