@@ -176,7 +176,7 @@ def apply_filesystem_paths_patch(sdk: pathlib.Path):
         (
             "src/core/filesystem_posix.cpp",
             "GetExecutableFolder dladdr fallback on iOS",
-            "std::filesystem::path GetExecutableFolder() {\n#if REX_PLATFORM_ANDROID\n",
+            "std::filesystem::path GetExecutableFolder() {\n  return GetExecutablePath().parent_path();\n}",
             "std::filesystem::path GetExecutableFolder() {\n"
             "#if REX_PLATFORM_IOS\n"
             "  // LOCAL PATCH - iOS: Locate library in <app>.app/Frameworks under LiveContainer\n"
@@ -185,7 +185,7 @@ def apply_filesystem_paths_patch(sdk: pathlib.Path):
             "    return std::filesystem::path(info.dli_fname).parent_path();\n"
             "  }\n"
             "#endif\n"
-            "#if REX_PLATFORM_ANDROID\n",
+            "  return GetExecutablePath().parent_path();\n}",
         ),
         (
             "src/core/filesystem_posix.cpp",
