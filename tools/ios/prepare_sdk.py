@@ -259,6 +259,88 @@ def apply_pipeline_cache_patch(sdk: pathlib.Path):
     run_patch("pipeline_cache", blocks, sdk)
 
 
+def apply_memory_posix_patch(sdk: pathlib.Path):
+    """Patches memory_posix.cpp to use vm_region_64 on iOS (mach_vm is unsupported on iOS)."""
+    blocks = [
+        (
+            "src/core/memory_posix.cpp",
+            "iOS mach/vm_map.h include instead of unsupported mach/mach_vm.h",
+            "#if REX_PLATFORM_MAC\n"
+            "#include <mach/mach.h>\n"
+            "#include <mach/mach_vm.h>\n"
+            "#include <mach/vm_region.h>\n"
+            "#endif  // REX_PLATFORM_MAC\n",
+            "#if REX_PLATFORM_IOS\n"
+            "#include <mach/mach.h>\n"
+            "#include <mach/vm_map.h>\n"
+            "#include <mach/vm_region.h>\n"
+            "#elif REX_PLATFORM_MAC\n"
+            "#include <mach/mach.h>\n"
+            "#include <mach/mach_vm.h>\n"
+            "#include <mach/vm_region.h>\n"
+            "#endif  // REX_PLATFORM_MAC\n",
+        ),
+        (
+            "src/core/memory_posix.cpp",
+            "QueryProtect vm_region_64 on iOS",
+            "bool QueryProtect(void* base_address, size_t& length, PageAccess& access_out) {\n"
+            "#if REX_PLATFORM_MAC\n"
+            "  mach_vm_address_t address = reinterpret_cast<mach_vm_address_t>(base_address);\n"
+            "  mach_vm_size_t region_size = 0;\n"
+            "  vm_region_basic_info_data_64_t info;\n"
+            "  mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;\n"
+            "  mach_port_t object_name;\n\n"
+            "  kern_return_t kr =\n"
+            "      mach_vm_region(mach_task_self(), &address, &region_size, VM_REGION_BASIC_INFO_64,\n"
+            "                     reinterpret_cast<vm_region_info_t>(&info), &info_count, &object_name);\n"
+            "  if (kr != KERN_SUCCESS) {\n"
+            "    return false;\n"
+            "  }\n"
+            "  if (address > reinterpret_cast<mach_vm_address_t>(base_address)) {\n"
+            "    return false;\n"
+            "  }\n\n"
+            "  length = static_cast<size_t>((address + region_size) -\n"
+            "                               reinterpret_cast<mach_vm_address_t>(base_address));\n",
+            "bool QueryProtect(void* base_address, size_t& length, PageAccess& access_out) {\n"
+            "#if REX_PLATFORM_IOS\n"
+            "  vm_address_t address = reinterpret_cast<vm_address_t>(base_address);\n"
+            "  vm_size_t region_size = 0;\n"
+            "  vm_region_basic_info_data_64_t info;\n"
+            "  mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;\n"
+            "  mach_port_t object_name = MACH_PORT_NULL;\n\n"
+            "  kern_return_t kr =\n"
+            "      vm_region_64(mach_task_self(), &address, &region_size, VM_REGION_BASIC_INFO_64,\n"
+            "                   reinterpret_cast<vm_region_info_t>(&info), &info_count, &object_name);\n"
+            "  if (kr != KERN_SUCCESS) {\n"
+            "    return false;\n"
+            "  }\n"
+            "  if (address > reinterpret_cast<vm_address_t>(base_address)) {\n"
+            "    return false;\n"
+            "  }\n\n"
+            "  length = static_cast<size_t>((address + region_size) -\n"
+            "                               reinterpret_cast<vm_address_t>(base_address));\n"
+            "#elif REX_PLATFORM_MAC\n"
+            "  mach_vm_address_t address = reinterpret_cast<mach_vm_address_t>(base_address);\n"
+            "  mach_vm_size_t region_size = 0;\n"
+            "  vm_region_basic_info_data_64_t info;\n"
+            "  mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;\n"
+            "  mach_port_t object_name;\n\n"
+            "  kern_return_t kr =\n"
+            "      mach_vm_region(mach_task_self(), &address, &region_size, VM_REGION_BASIC_INFO_64,\n"
+            "                     reinterpret_cast<vm_region_info_t>(&info), &info_count, &object_name);\n"
+            "  if (kr != KERN_SUCCESS) {\n"
+            "    return false;\n"
+            "  }\n"
+            "  if (address > reinterpret_cast<mach_vm_address_t>(base_address)) {\n"
+            "    return false;\n"
+            "  }\n\n"
+            "  length = static_cast<size_t>((address + region_size) -\n"
+            "                               reinterpret_cast<mach_vm_address_t>(base_address));\n",
+        ),
+    ]
+    run_patch("memory_posix", blocks, sdk)
+
+
 def main():
     parser = argparse.ArgumentParser(description="ReXGlue iOS SDK Preparation")
     parser.add_argument("--sdk", type=str, default=str(REPO_ROOT.parent / "rexglue-sdk-ios"),
@@ -275,6 +357,7 @@ def main():
     apply_fpscr_patch(sdk_dir)
     apply_filesystem_paths_patch(sdk_dir)
     apply_pipeline_cache_patch(sdk_dir)
+    apply_memory_posix_patch(sdk_dir)
 
     print("[prepare_sdk] SUCCESS: ReXGlue SDK is fully prepared and patched for iOS ARM64!")
 
