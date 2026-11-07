@@ -59,7 +59,7 @@ jobs:
             rexglue-sdk-ios
             ../rexglue-sdk-ios
             ~/.tekken6-ios
-          key: ${{ runner.os }}-rexglue-sdk-v0.10.0-mvk-1.4.1-patch2
+          key: ${{ runner.os }}-rexglue-sdk-v0.10.0-mvk-1.4.1-patch3
 
       - name: Restore or Unpack Game Codegen
         run: |
@@ -106,7 +106,8 @@ jobs:
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_SYSROOT=iphoneos \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.4 \
+            -DCMAKE_CXX_FLAGS="-D_LIBCPP_DISABLE_AVAILABILITY=1" \
             -DREX_PLATFORM_IOS=1 \
             -DCMAKE_C_COMPILER="${CC}" \
             -DCMAKE_CXX_COMPILER="${CXX}" \

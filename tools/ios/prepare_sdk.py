@@ -147,6 +147,7 @@ def apply_cmake_patches(sdk: pathlib.Path):
             '    # LOCAL PATCH - iOS platform configuration\n'
             '    if(IOS OR REX_PLATFORM_IOS)\n'
             '        add_compile_definitions(REX_PLATFORM_IOS=1)\n'
+            '        add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY=1)\n'
             '        set(REX_PLATFORM "ios-${REX_TARGET_PROCESSOR}")\n'
             '    endif()\n',
         ),
