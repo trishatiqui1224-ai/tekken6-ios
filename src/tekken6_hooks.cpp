@@ -32,30 +32,30 @@ void StructReturnAdapter(PPCContext& ctx, uint8_t* base) {
     // Xbox 360 / PowerPC 64 ABI: When returning an aggregate structure/object,
     // caller places destination pointer into r3. Callee MUST return that same
     // destination pointer in r3 upon completion.
-    uint32_t dest_ptr = static_cast<uint32_t>(ctx.r3);
+    uint32_t dest_ptr = ctx.r3.u32;
     if (dest_ptr != 0 && base != nullptr) {
         // Zero-initialize destination buffer up to 64 bytes (Matrix4x4 / Vector4 / BoundingBox)
         std::memset(base + dest_ptr, 0, 64);
     }
-    ctx.r3 = dest_ptr;
+    ctx.r3.u32 = dest_ptr;
 }
 
 void AnimBlendAdapter(PPCContext& ctx, uint8_t* base) {
     // Animation evaluator stub: return 1 (animation state active / evaluated)
     (void)base;
-    ctx.r3 = 1;
+    ctx.r3.u32 = 1;
 }
 
 void PhysicsCollisionAdapter(PPCContext& ctx, uint8_t* base) {
     // Physics collision callback stub: return 0 (no collision reject / success)
     (void)base;
-    ctx.r3 = 0;
+    ctx.r3.u32 = 0;
 }
 
 void VoiceCallbackAdapter(PPCContext& ctx, uint8_t* base) {
     // Audio / voice event callback stub: return 0 (success)
     (void)base;
-    ctx.r3 = 0;
+    ctx.r3.u32 = 0;
 }
 
 void RegisterMemberAdapters(rex::runtime::FunctionDispatcher* dispatcher) {
