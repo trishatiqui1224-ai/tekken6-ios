@@ -427,9 +427,6 @@ using namespace tekken6::launcher;
 // ---------------------------------------------------------------------------
 //  Launcher Navigation Controller
 // ---------------------------------------------------------------------------
-@interface Tekken6LauncherNavigation : UINavigationController
-@end
-
 @implementation Tekken6LauncherNavigation
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
   if (self.presentedViewController && !self.presentedViewController.isBeingDismissed) {
@@ -726,16 +723,31 @@ using namespace tekken6::launcher;
 }
 
 - (void)exportLogsZip {
-  fs::path logsDir = _documentsPath / "logs";
-  fs::path zipPath = _documentsPath / "tekken6_logs.zip";
-  std::string cmd = "cd \"" + logsDir.string() + "\" && zip -r \"" + zipPath.string() + "\" .";
-  system(cmd.c_str());
+  fs::path bootLog = _documentsPath / "logs" / "boot.txt";
+  fs::path gameLog = _documentsPath / "logs" / "tekken6.log";
+  NSMutableArray* items = [NSMutableArray array];
 
-  if (fs::exists(zipPath)) {
-    NSURL* fileURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:zipPath.string().c_str()]];
-    UIActivityViewController* act = [[UIActivityViewController alloc] initWithActivityItems:@[fileURL]
+  if (fs::exists(bootLog)) {
+    [items addObject:[NSURL fileURLWithPath:[NSString stringWithUTF8String:bootLog.string().c_str()]]];
+  }
+  if (fs::exists(gameLog)) {
+    [items addObject:[NSURL fileURLWithPath:[NSString stringWithUTF8String:gameLog.string().c_str()]]];
+  }
+
+  if (items.count > 0) {
+    UIActivityViewController* act = [[UIActivityViewController alloc] initWithActivityItems:items
                                                                       applicationActivities:nil];
+    if (act.popoverPresentationController) {
+      act.popoverPresentationController.sourceView = self.view;
+    }
     [self presentViewController:act animated:YES completion:nil];
+  } else {
+    UIAlertController* alert =
+        [UIAlertController alertControllerWithTitle:@"No Logs Found"
+                                            message:@"No boot or game logs have been generated yet."
+                                     preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
   }
 }
 

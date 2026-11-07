@@ -21,3 +21,4 @@ size_t FormatLastPPCBreadcrumbs(char* buf, size_t buf_size);
 namespace fnc::boot {
 using namespace tekken6::boot;
 }
+

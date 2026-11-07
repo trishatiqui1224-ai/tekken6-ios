@@ -336,3 +336,4 @@ size_t Tekken6FormatLastPPCBreadcrumbs(char* buf, size_t buf_size) {
   return tekken6::boot::FormatLastPPCBreadcrumbs(buf, buf_size);
 }
 }
+
