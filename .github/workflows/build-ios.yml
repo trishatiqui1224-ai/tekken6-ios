@@ -19,7 +19,7 @@ permissions:
 jobs:
   build-ios:
     name: Build Tekken 6 iOS (ARM64)
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout Repository
@@ -173,4 +173,6 @@ jobs:
             dist/icon_preview_sheet.png
           draft: false
           prerelease: false
+          overwrite_files: true
+          make_latest: true
           generate_release_notes: true
