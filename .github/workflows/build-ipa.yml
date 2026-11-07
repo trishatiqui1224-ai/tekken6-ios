@@ -73,6 +73,7 @@ jobs:
             echo "[CI] Downloading default.xex from provided xex_url..."
             curl -L -s -o xex/tekken6_default.xex "${{ inputs.xex_url }}"
           fi
+          python3 tools/ios/generate_code.py
 
       - name: Generate Studio-Grade AppIcon
         run: |

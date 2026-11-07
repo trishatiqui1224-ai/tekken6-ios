@@ -23,6 +23,9 @@ class Tekken6App : public rex::ReXApp {
 
   void OnPostSetup() override {
     rex::ReXApp::OnPostSetup();
+    if (runtime()) {
+      tekken6::hooks::RegisterMemberAdapters(runtime()->function_dispatcher());
+    }
   }
 };
 

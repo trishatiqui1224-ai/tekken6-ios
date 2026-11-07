@@ -17,8 +17,8 @@ Payload/
 
 # Game assets & binaries
 game/
-*.iso
-*.ISO
+"Tekken 6/"
+Tekken\ 6/
 *.BIN
 *.IDX
 *.xex
