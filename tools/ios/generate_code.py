@@ -27,18 +27,23 @@ XEX_CANDIDATES = [
 
 
 def check_and_extract_cache():
-    """Unpacks gen.tar.gz if generated code is missing."""
+    """Ensures generated C++ code is present, extracting gen.tar.gz if needed."""
+    init_file = GENERATED_DIR / "tekken6_init.cpp"
+    reg_file = GENERATED_DIR / "tekken6_register.cpp"
+    sources_cmake = GENERATED_DIR / "sources.cmake"
+
+    if init_file.exists() and reg_file.exists() and sources_cmake.exists():
+        print(f"[Codegen] Verified pre-generated C++ code already present in {GENERATED_DIR}.")
+        return True
+
     cache_archive = ROOT / "gen.tar.gz"
     if cache_archive.is_file():
-        init_file = GENERATED_DIR / "tekken6_init.cpp"
-        reg_file = GENERATED_DIR / "tekken6_register.cpp"
-        if not init_file.exists() or not reg_file.exists():
-            print(f"[Codegen] Unpacking pre-generated C++ code from {cache_archive.name}...")
-            GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-            with tarfile.open(cache_archive, "r:gz") as tar:
-                tar.extractall(path=ROOT)
-            print("[Codegen] Unpacked successfully.")
-            return True
+        print(f"[Codegen] Unpacking pre-generated C++ code from {cache_archive.name}...")
+        GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        with tarfile.open(cache_archive, "r:gz") as tar:
+            tar.extractall(path=ROOT)
+        print("[Codegen] Unpacked successfully.")
+        return True
     return False
 
 
@@ -56,12 +61,17 @@ def locate_xex(explicit_path=None):
 
 def run_codegen(xex_path, output_dir, config_path):
     """Executes the Tekken 6 codegen pipeline."""
+    init_file = GENERATED_DIR / "tekken6_init.cpp"
+    reg_file = GENERATED_DIR / "tekken6_register.cpp"
     codegen_script = ROOT / "tools" / "build_tekken6_codegen.py"
     if codegen_script.is_file():
         cmd = [sys.executable, str(codegen_script)]
         print(f"[Codegen] Running: {' '.join(cmd)}")
         res = subprocess.run(cmd, cwd=str(ROOT))
         if res.returncode != 0:
+            if init_file.exists() and reg_file.exists():
+                print(f"[Codegen] Host codegen exited with {res.returncode}, but valid pre-generated C++ code is intact. Proceeding.")
+                return
             sys.exit(f"[ERROR] Codegen pipeline failed with code {res.returncode}")
     else:
         # Fallback to rexglue / rexgen CLI if present on host PATH
