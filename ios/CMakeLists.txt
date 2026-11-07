@@ -170,6 +170,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
 
 set(TEKKEN6_APP_SOURCES
     src/ios_main.mm
+    src/boot_trace.cpp
     src/launcher.mm
     src/touch_controls.mm
     src/save_manager.mm

@@ -22,6 +22,38 @@
     <string>@TEKKEN6_VERSION_CODE@</string>
     <key>CFBundleIconName</key>
     <string>AppIcon</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon-1024</string>
+    <key>CFBundleIcons</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>AppIcon-1024</string>
+                <string>AppIcon</string>
+            </array>
+            <key>CFBundleIconName</key>
+            <string>AppIcon</string>
+            <key>UIPrerenderedIcon</key>
+            <true/>
+        </dict>
+    </dict>
+    <key>CFBundleIcons~ipad</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>AppIcon-1024</string>
+                <string>AppIcon</string>
+            </array>
+            <key>CFBundleIconName</key>
+            <string>AppIcon</string>
+            <key>UIPrerenderedIcon</key>
+            <true/>
+        </dict>
+    </dict>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>MinimumOSVersion</key>

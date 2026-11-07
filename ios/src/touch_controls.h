@@ -1,37 +1,35 @@
-// Tekken 6 Recompiled - iOS Arcade Fighting Touch Controls
+// Tekken 6 iOS - Low-Latency Arcade Fighting Touch Controls (touch_controls.h)
 // Title ID: 4E4D07FC
 
 #pragma once
 
 #ifdef __OBJC__
 #import <UIKit/UIKit.h>
-@class UIViewController;
-@class UIView;
 #endif
 
 namespace tekken6::touch {
 
-// Installs the always-on-top passthrough arcade fighting touch overlay
-// (TouchOverlayContainerView, zPosition = 9999). Idempotent.
+// Installs the glassmorphic touch overlay on the key window
 void Install();
 
-// Brings the overlay to front if swapchain or Metal views recreate
-void BringToFront();
-
-// Installs the 60/120 FPS and frame-time HUD in the top bar
+// Installs the real-time FPS and frame time HUD
 void InstallFpsCounter();
 
-// Toggles visibility of touch controls (e.g. on gamepad connection)
+// Visibility and z-order controls
 void SetVisible(bool visible);
 bool IsVisible();
+void BringToFront();
 
-// Switch between Arcade Fight Pad layout and Menu navigation layout
-void SetLayoutMode(int mode); // 0 = FightPad, 1 = Menu
+// Mode controls: Fight Mode vs Menu Nav Mode
+void SetFightMode(bool fight_mode);
+bool IsFightMode();
 
-#ifdef __OBJC__
-// In-game configuration & drag-to-edit layout controller
-UIViewController* MakeLayoutEditor();
-#endif
+// Opacity controls
+void SetOpacity(float opacity);
+void CycleOpacity();
 
-} // namespace tekken6::touch
+}  // namespace tekken6::touch
 
+namespace fnc::touch {
+using namespace tekken6::touch;
+}
