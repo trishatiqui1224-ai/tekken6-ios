@@ -427,6 +427,9 @@ using namespace tekken6::launcher;
 // ---------------------------------------------------------------------------
 //  Launcher Navigation Controller
 // ---------------------------------------------------------------------------
+@interface Tekken6LauncherNavigation : UINavigationController
+@end
+
 @implementation Tekken6LauncherNavigation
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
   if (self.presentedViewController && !self.presentedViewController.isBeingDismissed) {

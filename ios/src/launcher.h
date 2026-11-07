@@ -46,6 +46,15 @@ NSString* SettingValue(NSDictionary<NSString*, NSString*>* settings, NSString* k
 }  // namespace tekken6::launcher
 
 #ifdef __OBJC__
+@interface Tekken6LauncherNavigation : UINavigationController
+@end
+
+@interface Tekken6LauncherController : UITableViewController <UIDocumentPickerDelegate>
+- (instancetype)initWithDocuments:(const std::filesystem::path&)docs
+                             done:(void (^)(std::filesystem::path))doneCallback;
+@property(nonatomic, readonly) std::filesystem::path selectedSource;
+@end
+
 @interface Tekken6AppDelegate : UIResponder <UIApplicationDelegate>
 @property (strong, nonatomic) UIWindow *window;
 @end
