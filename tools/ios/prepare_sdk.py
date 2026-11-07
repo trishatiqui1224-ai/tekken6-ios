@@ -341,6 +341,33 @@ def apply_memory_posix_patch(sdk: pathlib.Path):
     run_patch("memory_posix", blocks, sdk)
 
 
+def apply_version_cmake_patch(sdk: pathlib.Path):
+    """Patches rex_version.cmake to use CMAKE_CURRENT_SOURCE_DIR and prevent floor version regression fatal error."""
+    version_cmake = sdk / "cmake" / "rex_version.cmake"
+    if not version_cmake.exists():
+        return
+    txt = version_cmake.read_text(encoding="utf-8")
+    orig = txt
+
+    # 1. Default to CMAKE_CURRENT_SOURCE_DIR instead of CMAKE_SOURCE_DIR so parent repo tags (like v1.0.0) don't pollute SDK version
+    if 'set(ARG_SOURCE_DIR "${CMAKE_SOURCE_DIR}")' in txt:
+        txt = txt.replace(
+            'set(ARG_SOURCE_DIR "${CMAKE_SOURCE_DIR}")',
+            'set(ARG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")'
+        )
+
+    # 2. Downgrade floor version regression check from FATAL_ERROR to STATUS
+    if 'message(FATAL_ERROR' in txt and 'The floor in CMakeLists.txt must not regress.' in txt:
+        txt = txt.replace(
+            'message(FATAL_ERROR\n            "rex_compute_version: floor version (${ARG_FLOOR_MAJOR}.${ARG_FLOOR_MINOR}) is behind',
+            'message(STATUS\n            "rex_compute_version: floor version (${ARG_FLOOR_MAJOR}.${ARG_FLOOR_MINOR}) is behind'
+        )
+
+    if txt != orig:
+        version_cmake.write_text(txt, encoding="utf-8")
+        print("  [ok] rex_version: patched rex_version.cmake to use CMAKE_CURRENT_SOURCE_DIR and prevent version errors")
+
+
 def main():
     parser = argparse.ArgumentParser(description="ReXGlue iOS SDK Preparation")
     parser.add_argument("--sdk", type=str, default=str(REPO_ROOT.parent / "rexglue-sdk-ios"),
@@ -353,6 +380,7 @@ def main():
     ensure_sdk_cloned(sdk_dir)
     fix_libmspack_symlinks(sdk_dir)
     ensure_moltenvk(sdk_dir)
+    apply_version_cmake_patch(sdk_dir)
     apply_cmake_patches(sdk_dir)
     apply_fpscr_patch(sdk_dir)
     apply_filesystem_paths_patch(sdk_dir)

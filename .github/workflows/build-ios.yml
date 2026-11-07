@@ -59,7 +59,7 @@ jobs:
             rexglue-sdk-ios
             ../rexglue-sdk-ios
             ~/.tekken6-ios
-          key: ${{ runner.os }}-rexglue-sdk-v0.10.0-mvk-1.4.1-patch1
+          key: ${{ runner.os }}-rexglue-sdk-v0.10.0-mvk-1.4.1-patch2
 
       - name: Restore or Unpack Game Codegen
         run: |
